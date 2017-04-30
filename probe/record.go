@@ -4,6 +4,7 @@ import (
     "net/url"
     "strconv"
     "time"
+    "fmt"
 )
 
 type ProbeRecord struct {
@@ -21,4 +22,8 @@ func (record *ProbeRecord) Values() (values url.Values) {
     values.Add("rssi", strconv.Itoa(record.Rssi))
     values.Add("ap_name", record.ApName)
     return
+}
+
+func (r ProbeRecord) String() string {
+    return fmt.Sprintf("%s,%s,%d,%d,%s", r.Time.Format(time.RFC3339), r.Mac, r.SequenceId, r.Rssi, r.ApName)
 }

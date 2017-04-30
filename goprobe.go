@@ -118,7 +118,7 @@ func main() {
         radioTap := packet.Layer(layers.LayerTypeRadioTap).(*layers.RadioTap)
 
         // send a record to DB
-        r := &probe.ProbeRecord{
+        r := probe.ProbeRecord{
             Time:       packet.Metadata().Timestamp,
             Mac:        dot11.Address2.String(),
             Rssi:       int(radioTap.DBMAntennaSignal),
