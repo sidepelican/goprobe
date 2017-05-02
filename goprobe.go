@@ -8,6 +8,7 @@ import (
     "flag"
 
     "github.com/sidepelican/goprobe/probe"
+    "encoding/json"
 )
 
 type Config struct {
@@ -47,6 +48,12 @@ func main() {
 
     for record := range source.Records() {
         log.Println(record)
+
+        bytes, err := json.Marshal(record)
+        if err != nil {
+            continue
+        }
+        log.Println(string(bytes))
     }
 }
 

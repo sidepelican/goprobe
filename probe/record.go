@@ -8,11 +8,11 @@ import (
 )
 
 type ProbeRecord struct {
-    Time       time.Time
-    Mac        string
-    SequenceId int
-    Rssi       int
-    ApName     string
+    Time       time.Time    `json:"time"`
+    Mac        string       `json:"mac"`
+    SequenceId int          `json:"sequence_id"`
+    Rssi       int          `json:"rssi"`
+    ApName     string       `json:"ap_name"`
 }
 
 func (record *ProbeRecord) Values() (values url.Values) {
