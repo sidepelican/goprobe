@@ -1,2 +1,3 @@
-ap_name = "<this access point name>"
-api_url = "<test url>"
+apname = "<this access point name>"
+apiurl = "<test url>"
+mqtturi = "tcp://your.broker.ip:1883"

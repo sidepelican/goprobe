@@ -13,11 +13,13 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/sidepelican/goprobe/probe"
+	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
 type Config struct {
-	ApiUrl string
-	ApName string
+	ApiUrl  string
+	ApName  string
+	MqttUri string
 }
 
 func exists(filename string) bool {
@@ -86,6 +88,21 @@ func main() {
 	}
 	defer source.Close()
 
+	// setup MQTT (optional)
+	var mqttClient MQTT.Client = nil
+	if config.MqttUri != "" {
+		opts := MQTT.NewClientOptions()
+		opts.AddBroker(config.MqttUri)
+
+		mqttClient = MQTT.NewClient(opts)
+		if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
+			log.Println("MQTT:", token.Error())
+		} else {
+			defer mqttClient.Disconnect(250)
+			log.Println("MQTT Publisher Started")
+		}
+	}
+
 	for record := range source.Records() {
 		log.Println(record)
 
@@ -93,7 +110,11 @@ func main() {
 		if err != nil {
 			continue
 		}
-		log.Println(string(bytes))
+
+		if mqttClient != nil {
+			t := mqttClient.Publish("/goprobe", 2, false, bytes)
+			t.Wait()
+		}
 	}
 }
 
