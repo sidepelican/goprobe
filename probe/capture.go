@@ -12,11 +12,11 @@ type ProbeSource struct {
 	stop chan bool
 }
 
-func (s *ProbeSource)Records() chan ProbeRecord {
+func (s *ProbeSource) Records() chan ProbeRecord {
 	return s.c
 }
 
-func (s *ProbeSource)Close() {
+func (s *ProbeSource) Close() {
 	s.stop <- true
 }
 
@@ -75,44 +75,41 @@ func openAvailableMonitorModeInterface() (*pcap.Handle, error) {
 	// find useable devices
 	ifs, err := pcap.FindAllDevs()
 	if len(ifs) == 0 {
-		return nil, fmt.Errorf("no devices found : %s\n", err)
+		return nil, fmt.Errorf("no devices found: %s", err)
 	}
 
 	// try any interfaces to monitor
-	for _, iface := range ifs {
+	errs := ""
+	for i, iface := range ifs {
 		handle, err := openAsMonitorMode(iface.Name)
 		if err != nil {
+			errs += fmt.Sprintf("dev %d: %s (%s)\n%v\n", i+1, iface.Name, iface.Description, err)
 			continue
 		}
-		fmt.Println("open interface", iface.Name)
+		fmt.Println("used interface:", iface.Name)
 		return handle, nil
 	}
 
-	errs := ""
-	for i, iface := range ifs {
-		errs += fmt.Sprintf("\ndev %d: %s (%s)", i+1, iface.Name, iface.Description)
-	}
-
-	return nil, fmt.Errorf("failed to find monitor mode available interface.%s", errs)
+	return nil, fmt.Errorf("failed to find monitor mode available interface\n%s", errs)
 }
 
 func openAsMonitorMode(device string) (*pcap.Handle, error) {
 
 	inactive, err := pcap.NewInactiveHandle(device)
 	if err != nil {
-		return nil, fmt.Errorf("NewInactiveHandle(%s) failed: %s\n", device, err)
+		return nil, fmt.Errorf("NewInactiveHandle(%s) failed: %s", device, err)
 	}
 	defer inactive.CleanUp()
 
 	// change mode to monitor
 	if err := inactive.SetRFMon(true); err != nil {
-		return nil, fmt.Errorf("SetRFMon failed: %s\n", err)
+		return nil, fmt.Errorf("SetRFMon failed: %s", err)
 	}
 
 	// create the actual handle by calling Activate:
 	handle, err := inactive.Activate() // after this, inactive is no longer valid
 	if handle == nil {
-		return nil, fmt.Errorf("Activate(%s) failed: %s\n", device, err)
+		return nil, fmt.Errorf("Activate(%s) failed: %s", device, err)
 	}
 
 	return handle, nil
