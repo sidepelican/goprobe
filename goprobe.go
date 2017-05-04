@@ -1,60 +1,73 @@
 package main
 
 import (
-    "log"
-    //"net/http"
-    //"bytes"
-    //"github.com/BurntSushi/toml"
-    "flag"
+	"log"
+	"os"
+	"io"
+	"flag"
+	"encoding/json"
+	"runtime"
+	//"net/http"
+	//"bytes"
 
-    "github.com/sidepelican/goprobe/probe"
-    "encoding/json"
+	"github.com/BurntSushi/toml"
+	"github.com/sidepelican/goprobe/probe"
 )
 
 type Config struct {
-    ApiUrl string
-    Apname string
+	ApiUrl string
+	ApName string
 }
 
-var config Config
+func loadConfig(path string) (config Config) {
+	if path == "" {
+		if runtime.GOOS == "linux" {
+			path = "/etc/goprobe/config.tml"
+		}
+	}
 
+	// decode const settings
+	if _, err := toml.DecodeFile(path, &config); err != nil {
+		log.Println(err)
+		config.ApName = "undefined"
+	}
+	return
+}
 
 func main() {
-    //// logging setup
-    //f, err := os.OpenFile("/var/log/goprobe.log", os.O_APPEND | os.O_CREATE | os.O_RDWR, 0666)
-    //if err != nil {
-    //    println("error opening file: %v", err)
-    //}
-    //defer f.Close()
-    //log.SetOutput(io.MultiWriter(f, os.Stdout)) // assign it to the standard logger
-    log.SetFlags(0)
+	// logging setup
+	if runtime.GOOS == "linux" {
+		f, err := os.OpenFile("/var/log/goprobe.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+		if err != nil {
+			println("error opening file: %v", err)
+		}
+		defer f.Close()
+		log.SetOutput(io.MultiWriter(f, os.Stdout)) // assign it to the standard logger
+	}
+	log.SetFlags(0)
 
-    // parse flags
-    device := flag.String("d", "", "device")
-    flag.Parse()
-
-    // decode const settings
-    //if _, err := toml.DecodeFile("config.tml", &config); err != nil {
-    //    fmt.Printf("load config.tml failed: %s\n", err)
-    //    return
-    //}
+	// parse flags
+	device := flag.String("d", "", "device")
+	configPath := flag.String("e", "", "config path")
+	flag.Parse()
+	config := loadConfig(*configPath)
 
 	// start packet capturing
-	source, err := probe.NewProbeSource(*device)
-	if err != nil{
+	source, err := probe.NewProbeSource(*device, config.ApName)
+	if err != nil {
 		log.Fatal(err)
 	}
 	defer source.Close()
 
-    for record := range source.Records() {
-        log.Println(record)
+	for record := range source.Records() {
+		log.Println(record)
 
-        bytes, err := json.Marshal(record)
-        if err != nil {
-            continue
-        }
-        log.Println(string(bytes))
-    }
+		bytes, err := json.Marshal(record)
+		if err != nil {
+			continue
+		}
+		log.Println(string(bytes))
+	}
 }
 
 //func postRecord(record *ProbeRecord) {

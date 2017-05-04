@@ -20,7 +20,7 @@ func (s *ProbeSource)Close() {
 	s.stop <- true
 }
 
-func NewProbeSource(device string) (*ProbeSource, error) {
+func NewProbeSource(device string, accessPointName string) (*ProbeSource, error) {
 
 	var handle *pcap.Handle
 	var err error
@@ -59,7 +59,7 @@ func NewProbeSource(device string) (*ProbeSource, error) {
 					Mac:        dot11.Address2.String(),
 					Rssi:       int(radioTap.DBMAntennaSignal),
 					SequenceId: int(dot11.SequenceNumber),
-					ApName:     "undefined",
+					ApName:     accessPointName,
 				}
 			case <-source.stop:
 				break
