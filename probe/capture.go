@@ -55,7 +55,7 @@ func NewProbeSource(device string, accessPointName string) (*ProbeSource, error)
 				radioTap := packet.Layer(layers.LayerTypeRadioTap).(*layers.RadioTap)
 
 				source.c <- ProbeRecord{
-					Time:       packet.Metadata().Timestamp,
+					Timestamp:  packet.Metadata().Timestamp.Unix(),
 					Mac:        dot11.Address2.String(),
 					Rssi:       int(radioTap.DBMAntennaSignal),
 					SequenceId: int(dot11.SequenceNumber),
