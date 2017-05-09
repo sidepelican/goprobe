@@ -13,8 +13,18 @@ import (
     //"bytes"
 
     "github.com/BurntSushi/toml"
-    "github.com/sidepelican/goprobe/probe"
+    "github.com/takama/daemon"
     MQTT "github.com/eclipse/paho.mqtt.golang"
+
+    "github.com/sidepelican/goprobe/probe"
+)
+
+const (
+    // name of the service
+    name        = "goprobe"
+    description = "caputre probe requests"
+
+    topic = "/goprobe"
 )
 
 type Config struct {
@@ -23,56 +33,31 @@ type Config struct {
     MqttUri string
 }
 
-func exists(filename string) bool {
-    _, err := os.Stat(filename)
-    return err == nil
+type Service struct {
+    daemon.Daemon
 }
 
-func findDefaultConfigPath() (string, error) {
+func (service *Service) Manage() (string, error) {
 
-    errret := fmt.Errorf("config.tml not found at: ")
-
-    if runtime.GOOS == "linux" {
-        p := "/etc/goprobe/config.tml"
-        if exists(p) {
-            return p, nil
+    // if received any kind of command, do it
+    if len(os.Args) > 1 {
+        command := os.Args[1]
+        switch command {
+        case "install":
+            return service.Install()
+        case "remove":
+            return service.Remove()
+        case "start":
+            return service.Start()
+        case "stop":
+            return service.Stop()
+        case "status":
+            return service.Status()
+        default:
+            return fmt.Sprintf("Usage: %v [install|remove|start|stop|status]", os.Args[0]), nil
         }
-        errret = fmt.Errorf("%v\n\t%v",errret, p)
     }
 
-    runPath, err := os.Executable()
-    if err == nil {
-        p := path.Dir(runPath) + "/config.tml"
-        if exists(p) {
-            return p, nil
-        }
-        errret = fmt.Errorf("%v\n\t%v",errret, p)
-    }
-
-    return "", errret
-}
-
-func loadConfig(path string) (config Config) {
-    config.ApName = "undefined"
-
-    if path == "" {
-        var err error
-        path, err = findDefaultConfigPath()
-        if err != nil {
-            log.Println(err)
-            return
-        }
-        log.Println("<config> load default path:", path)
-    }
-
-    // decode const settings
-    if _, err := toml.DecodeFile(path, &config); err != nil {
-        log.Println(err)
-    }
-    return
-}
-
-func main() {
     // logging setup
     log.SetFlags(0)
     if runtime.GOOS == "linux" {
@@ -125,9 +110,27 @@ func main() {
         }
 
         if mqttClient != nil {
-            mqttClient.Publish("/goprobe", 2, false, bytes)
+            mqttClient.Publish(topic, 2, false, bytes)
         }
     }
+
+    // never happen, but need to complete code
+    return "", nil
+}
+
+func main() {
+    srv, err := daemon.New(name, description, "")
+    if err != nil {
+        log.Println("Error:", err)
+        os.Exit(1)
+    }
+    service := &Service{srv}
+    status, err := service.Manage()
+    if err != nil {
+        log.Println(status, "\nError:", err)
+        os.Exit(1)
+    }
+    fmt.Println(status)
 }
 
 //func postRecord(record *ProbeRecord) {
@@ -146,3 +149,52 @@ func main() {
 //    buf.ReadFrom(res.Body)
 //    fmt.Println(buf.String())
 //}
+
+func exists(filename string) bool {
+    _, err := os.Stat(filename)
+    return err == nil
+}
+
+func findDefaultConfigPath() (string, error) {
+
+    errret := fmt.Errorf("config.tml not found at: ")
+
+    if runtime.GOOS == "linux" {
+        p := "/etc/goprobe/config.tml"
+        if exists(p) {
+            return p, nil
+        }
+        errret = fmt.Errorf("%v\n\t%v", errret, p)
+    }
+
+    runPath, err := os.Executable()
+    if err == nil {
+        p := path.Dir(runPath) + "/config.tml"
+        if exists(p) {
+            return p, nil
+        }
+        errret = fmt.Errorf("%v\n\t%v", errret, p)
+    }
+
+    return "", errret
+}
+
+func loadConfig(path string) (config Config) {
+    config.ApName = "undefined"
+
+    if path == "" {
+        var err error
+        path, err = findDefaultConfigPath()
+        if err != nil {
+            log.Println(err)
+            return
+        }
+        log.Println("load default path:", path)
+    }
+
+    // decode const settings
+    if _, err := toml.DecodeFile(path, &config); err != nil {
+        log.Println(err)
+    }
+    return
+}
