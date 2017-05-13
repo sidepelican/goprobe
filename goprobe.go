@@ -21,8 +21,9 @@ import (
 
 const (
 	// name of the service
-	name        = "goprobe"
-	description = "caputre probe requests"
+	name         = "goprobe"
+	description  = "caputre probe requests"
+	dependencies = "network.target"
 
 	topic = "/goprobe"
 )
@@ -119,7 +120,7 @@ func (service *Service) Manage() (string, error) {
 }
 
 func main() {
-	srv, err := daemon.New(name, description, "")
+	srv, err := daemon.New(name, description, dependencies)
 	if err != nil {
 		log.Println("Error:", err)
 		os.Exit(1)
