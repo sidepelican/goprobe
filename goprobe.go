@@ -78,10 +78,9 @@ func (service *Service) Manage() (string, error) {
 
 	// parse flags
 	device := flag.String("d", "", "device")
-	configPath := flag.String("e", "", "config path")
 	flag.Parse()
 
-	config := loadConfig(*configPath)
+	config := loadConfig()
 
 	// start packet capturing
 	source, err := probe.NewProbeSource(*device, config.ApName)
@@ -170,21 +169,34 @@ func exists(filename string) bool {
 	return err == nil
 }
 
-func findDefaultConfigPath() (string, error) {
+func findConfigPath() (string, error) {
 
-	errret := fmt.Errorf("config.tml not found at: ")
+	const configFileNAme = "config.tml"
+	errret := fmt.Errorf("%s not found at: ", configFileNAme)
 
+	// static path
 	if runtime.GOOS == "linux" {
-		p := "/etc/goprobe/config.tml"
+		p := "/etc/goprobe/" + configFileNAme
 		if exists(p) {
 			return p, nil
 		}
 		errret = fmt.Errorf("%v\n\t%v", errret, p)
 	}
 
+	// runpath
 	runPath, err := os.Executable()
 	if err == nil {
-		p := path.Dir(runPath) + "/config.tml"
+		p := path.Dir(runPath) + "/" + configFileNAme
+		if exists(p) {
+			return p, nil
+		}
+		errret = fmt.Errorf("%v\n\t%v", errret, p)
+	}
+
+	// current dir
+	pwd, err := os.Getwd()
+	if err == nil {
+		p := pwd + "/" + configFileNAme
 		if exists(p) {
 			return p, nil
 		}
@@ -194,22 +206,20 @@ func findDefaultConfigPath() (string, error) {
 	return "", errret
 }
 
-func loadConfig(path string) (config Config) {
+func loadConfig() (config Config) {
 	config.ApName = "undefined"
 
-	if path == "" {
-		var err error
-		path, err = findDefaultConfigPath()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		log.Println("load default path:", path)
+	path, err := findConfigPath()
+	if err != nil {
+		log.Println(err)
+		return
 	}
+	log.Println("load config:", path)
 
 	// decode const settings
 	if _, err := toml.DecodeFile(path, &config); err != nil {
 		log.Println(err)
+		return
 	}
 	return
 }

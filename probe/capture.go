@@ -87,7 +87,7 @@ func openAvailableMonitorModeInterface() (*pcap.Handle, error) {
 			errs += fmt.Sprintf("dev %d: %s (%s)\n%v\n", i+1, iface.Name, iface.Description, err)
 			continue
 		}
-		fmt.Println("used interface:", iface.Name)
+		log.Println("used interface:", iface.Name)
 		return handle, nil
 	}
 
