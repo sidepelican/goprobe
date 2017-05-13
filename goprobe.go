@@ -8,7 +8,6 @@ import (
 	"flag"
 	"path"
 	"encoding/json"
-	"time"
 	"runtime"
 	//"net/http"
 	//"bytes"
@@ -16,7 +15,6 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/takama/daemon"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
-	rotatelogs "github.com/lestrrat/go-file-rotatelogs"
 
 	"github.com/sidepelican/goprobe/probe"
 )
@@ -64,15 +62,14 @@ func (service *Service) Manage() (string, error) {
 	// logging setup
 	log.SetFlags(0)
 	if runtime.GOOS == "linux" {
-		logf, err := rotatelogs.New(
-			"/var/log/goprobe.log.%Y%m%d%H%M",
-			rotatelogs.WithLinkName("/var/log/goprobe.log"),
-			rotatelogs.WithRotationTime(7*24*time.Hour),
-		)
+		const logPath = "/var/log/goprobe.log"
+		f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 		if err != nil {
-			log.Printf("failed to create rotatelogs: %s", err)
+			println("error opening file: %v", err)
 		} else {
-			log.SetOutput(io.MultiWriter(logf, os.Stdout)) // assign it to the standard logger
+			println("logging to ", logPath)
+			defer f.Close()
+			log.SetOutput(io.MultiWriter(f, os.Stdout)) // assign it to the standard logger
 		}
 	}
 
