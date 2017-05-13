@@ -2,6 +2,7 @@ package probe
 
 import (
 	"fmt"
+	"log"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 	"github.com/google/gopacket/layers"
@@ -32,7 +33,7 @@ func NewProbeSource(device string, accessPointName string) (*ProbeSource, error)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("pcap version: %s\n", pcap.Version())
+	log.Printf("pcap version: %s\n", pcap.Version())
 
 	source := &ProbeSource{
 		c:    make(chan ProbeRecord),
