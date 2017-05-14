@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"io"
-	"flag"
 	"path"
 	"encoding/json"
 	"runtime"
@@ -29,6 +28,7 @@ const (
 )
 
 type Config struct {
+	Device  string
 	ApiUrl  string
 	ApName  string
 	MqttUri string
@@ -73,14 +73,10 @@ func (service *Service) Manage() (string, error) {
 		}
 	}
 
-	// parse flags
-	device := flag.String("d", "", "device")
-	flag.Parse()
-
 	config := loadConfig()
 
 	// start packet capturing
-	source, err := probe.NewProbeSource(*device, config.ApName)
+	source, err := probe.NewProbeSource(config.Device, config.ApName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -204,7 +200,6 @@ func findConfigPath() (string, error) {
 }
 
 func loadConfig() (config Config) {
-	config.ApName = "undefined"
 
 	path, err := findConfigPath()
 	if err != nil {

@@ -1,3 +1,12 @@
-apname = "<this access point name>"
-apiurl = "<test url>"
-mqtturi = "tcp://your.broker.ip:1883"
+## select network interface for packet capture. it should be able to use monitor mode. ex) "eth1". optional.
+## when this is empty, find available interface automatically.
+# device = ""
+
+## this is for logging. optional.
+# apname = "<this access point name>"
+
+## unused. optional.
+# apiurl = "<test url>"
+
+## send the probe requests to broker as Json. optional.
+# mqtturi = "tcp://your.broker.ip:1883"
