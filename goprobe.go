@@ -38,26 +38,12 @@ type Service struct {
 	daemon.Daemon
 }
 
-func (service *Service) Manage() (string, error) {
-
-	// if received any kind of command, do it
-	if len(os.Args) > 1 {
-		command := os.Args[1]
-		switch command {
-		case "install":
-			return service.Install()
-		case "remove":
-			return service.Remove()
-		case "start":
-			return service.Start()
-		case "stop":
-			return service.Stop()
-		case "status":
-			return service.Status()
-		default:
-			return fmt.Sprintf("Usage: %v [install | remove | start | stop | status]", os.Args[0]), nil
+func mainLoop() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("recover: ", err)
 		}
-	}
+	}()
 
 	// logging setup
 	log.SetFlags(0)
@@ -108,6 +94,32 @@ func (service *Service) Manage() (string, error) {
 		if mqttClient != nil {
 			go publishMqtt(mqttClient, bytes)
 		}
+	}
+}
+
+func (service *Service) Manage() (string, error) {
+
+	// if received any kind of command, do it
+	if len(os.Args) > 1 {
+		command := os.Args[1]
+		switch command {
+		case "install":
+			return service.Install()
+		case "remove":
+			return service.Remove()
+		case "start":
+			return service.Start()
+		case "stop":
+			return service.Stop()
+		case "status":
+			return service.Status()
+		default:
+			return fmt.Sprintf("Usage: %v [install | remove | start | stop | status]", os.Args[0]), nil
+		}
+	}
+
+	for {
+		mainLoop()
 	}
 
 	// never happen, but need to complete code
