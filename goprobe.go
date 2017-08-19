@@ -47,22 +47,20 @@ func mainLoop() {
 
 	// logging setup
 	log.SetFlags(0)
-	if runtime.GOOS == "linux" {
-		const logPath = "/var/log/goprobe.log"
-		f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
-		if err != nil {
-			println("error opening file: %v", err)
-		} else {
-			println("logging to ", logPath)
-			defer f.Close()
-			log.SetOutput(io.MultiWriter(f, os.Stdout)) // assign it to the standard logger
-		}
+	const logPath = "/var/log/goprobe.log"
+	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+	if err != nil {
+		log.Println("error opening file: %v", err)
+	} else {
+		log.Println("logging to ", logPath)
+		defer f.Close()
+		log.SetOutput(io.MultiWriter(f, os.Stdout)) // assign it to the standard logger
 	}
 
 	config := loadConfig()
 
 	// start packet capturing
-	source, err := probe.NewProbeSource(config.Device, config.ApName)
+	source, err := probe.NewProbeSource(config.Device)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -84,8 +82,15 @@ func mainLoop() {
 	}
 
 	for record := range source.Records() {
-		log.Println(record)
 
+		// set sensor environment information
+		if config.ApName != "" {
+			record.ApName = config.ApName
+		}
+
+		log.Println(record.String())
+
+		// send data as json
 		bytes, err := json.Marshal(record)
 		if err != nil {
 			continue
