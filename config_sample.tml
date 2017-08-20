@@ -5,8 +5,8 @@
 ## this is for logging. optional.
 # apname = "<this access point name>"
 
-## unused. optional.
-# apiurl = "<test url>"
+## send the caputred probe requests to your API. optional.
+# apiurl = "<your api url>"
 
-## send the probe requests to broker as Json. optional.
+## send the captured probe requests to broker as Json. optional.
 # mqtturi = "tcp://your.broker.ip:1883"

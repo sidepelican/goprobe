@@ -8,13 +8,13 @@ import (
 	"path"
 	"encoding/json"
 	"runtime"
-	//"net/http"
-	//"bytes"
-
-	"github.com/BurntSushi/toml"
-	MQTT "github.com/eclipse/paho.mqtt.golang"
+	"net/http"
+	"bytes"
+	"io/ioutil"
 
 	"github.com/sidepelican/goprobe/probe"
+	"github.com/BurntSushi/toml"
+	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
 const topic = "/goprobe"
@@ -84,6 +84,10 @@ func mainLoop() {
 			continue
 		}
 
+		if config.ApiUrl != "" {
+			go postRecord(config.ApiUrl, bytes)
+		}
+
 		if mqttClient != nil {
 			go publishMqtt(mqttClient, bytes)
 		}
@@ -101,22 +105,43 @@ func publishMqtt(client MQTT.Client, bytes []byte) {
 	t.Wait()
 }
 
-//func postRecord(record *ProbeRecord) {
-//
-//    // set recover for net/http panic
-//    defer func() {
-//        if err := recover(); err != nil {
-//            fmt.Println("recover: ", err)
-//        }
-//    }()
-//
-//    res, _ := http.PostForm(config.ApiUrl, record.Values())
-//    defer res.Body.Close()
-//
-//    buf := new(bytes.Buffer)
-//    buf.ReadFrom(res.Body)
-//    fmt.Println(buf.String())
-//}
+func postRecord(url string, data []byte) {
+
+    // set recover for net/http panic
+    defer func() {
+        if err := recover(); err != nil {
+            fmt.Println("recover: ", err)
+        }
+    }()
+
+	req, err := http.NewRequest(
+		http.MethodPost,
+		url,
+		bytes.NewBuffer(data),
+	)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	// Content-Type setting
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(string(body))
+}
 
 func exists(filename string) bool {
 	_, err := os.Stat(filename)
