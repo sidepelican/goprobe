@@ -2,7 +2,8 @@
 ## when this is empty, find available interface automatically.
 # device = ""
 
-## this is for logging. optional.
+## this is for logging.
+## hostname is used when empty.
 # apname = "<this access point name>"
 
 ## send the caputred probe requests to your API. optional.

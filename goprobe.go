@@ -199,5 +199,11 @@ func loadConfig() (config Config) {
 		log.Println(err)
 		return
 	}
+
+	// use hostname for Apname when it is empty
+	if config.ApName == "" {
+		config.ApName, _ = os.Hostname()
+	}
+
 	return
 }
