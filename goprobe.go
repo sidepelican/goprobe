@@ -6,6 +6,7 @@ import (
 	"os"
 	"io"
 	"path"
+	"time"
 	"encoding/json"
 	"runtime"
 	"net/http"
@@ -14,10 +15,14 @@ import (
 
 	"github.com/sidepelican/goprobe/probe"
 	"github.com/BurntSushi/toml"
+	"github.com/lestrrat/go-file-rotatelogs"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
-const topic = "/goprobe"
+const (
+	topic = "/goprobe"
+	logPath = "/var/log/goprobe.log"
+)
 
 type Config struct {
 	Device  string
@@ -35,14 +40,13 @@ func mainLoop() {
 
 	// logging setup
 	log.SetFlags(0)
-	const logPath = "/var/log/goprobe.log"
-	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+	rl, err := makeRotatelogs()
 	if err != nil {
-		log.Println("error opening file: %v", err)
+		log.Println("error setup rotatelogs: %v", err)
 	} else {
 		log.Println("logging to ", logPath)
-		defer f.Close()
-		log.SetOutput(io.MultiWriter(f, os.Stdout)) // assign it to the standard logger
+		defer rl.Close()
+		log.SetOutput(io.MultiWriter(rl, os.Stdout)) // assign it to the standard logger
 	}
 
 	config := loadConfig()
@@ -146,6 +150,14 @@ func postRecord(url string, data []byte) {
 func exists(filename string) bool {
 	_, err := os.Stat(filename)
 	return err == nil
+}
+
+func makeRotatelogs() (*rotatelogs.RotateLogs, error) {
+	return rotatelogs.New(
+		logPath + ".%Y%m%d",
+		rotatelogs.WithLinkName(logPath),
+		rotatelogs.WithRotationTime(time.Hour),
+	)
 }
 
 func findConfigPath() (string, error) {
