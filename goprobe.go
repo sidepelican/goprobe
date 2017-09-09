@@ -157,6 +157,7 @@ func makeRotatelogs() (*rotatelogs.RotateLogs, error) {
 		logPath + ".%Y%m%d",
 		rotatelogs.WithLinkName(logPath),
 		rotatelogs.WithRotationTime(time.Hour),
+		rotatelogs.WithMaxAge(0),
 	)
 }
 
