@@ -21,6 +21,10 @@ func (s *ProbeSource) Close() {
 	s.stop <- true
 }
 
+func FindAndNewProbeSource() (*ProbeSource, error) {
+	return NewProbeSource("")
+}
+
 func NewProbeSource(device string) (*ProbeSource, error) {
 
 	var handle *pcap.Handle
@@ -80,10 +84,15 @@ func openAvailableMonitorModeInterface() (*pcap.Handle, error) {
 
 	// try any interfaces to monitor
 	errs := ""
-	for i, iface := range ifs {
+	for _, iface := range ifs {
 		handle, err := openAsMonitorMode(iface.Name)
 		if err != nil {
-			errs += fmt.Sprintf("dev %d: %s (%s)\n%v\n", i+1, iface.Name, iface.Description, err)
+			if iface.Description != "" {
+				errs += fmt.Sprintf("%s (%s):\n %v\n", iface.Name, iface.Description, err)
+			} else {
+				errs += fmt.Sprintf("%s:\n %v\n", iface.Name, err)
+			}
+			
 			continue
 		}
 		log.Println("used interface:", iface.Name)
